@@ -4,10 +4,10 @@
 
 ## Thông tin học viên
 
-- Họ tên:
-- MSSV:
-- Email:
-- Link repo (fork):
+- Họ tên: Trương Thị Lan Anh
+- MSSV: 2A202602451
+- Email: anhtruong23072004@gmail.com
+- Link repo (fork): https://github.com/SxAinsworth/K4-Track4-Day23-TruongThiLanAnh-2A202602451-Sensor-Fusion
 - Commit hash nộp (`git rev-parse HEAD`):
 
 ## Tóm tắt kết quả
