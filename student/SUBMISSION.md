@@ -8,7 +8,7 @@
 - MSSV: 2A202602451
 - Email: anhtruong23072004@gmail.com
 - Link repo (fork): https://github.com/SxAinsworth/K4-Track4-Day23-TruongThiLanAnh-2A202602451-Sensor-Fusion
-- Commit hash nộp (`git rev-parse HEAD`): 7b8594b4ff49f331894f0be4850ccdb66521f623 (code E–H, artifacts và báo cáo; commit ngay sau chỉ ghi thêm dòng hash này)
+- Commit hash nộp (`git rev-parse HEAD`): 4a6456331b19740faa7b6da48efd1c11637d6aa3 (code E–H, artifacts và báo cáo; commit ngay sau chỉ ghi thêm dòng hash này)
 
 ## Tóm tắt kết quả
 
