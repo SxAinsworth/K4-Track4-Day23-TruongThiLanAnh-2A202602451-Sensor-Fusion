@@ -29,7 +29,7 @@
 - **Khác biệt chỉ nằm ở độ chính xác vị trí.** `sum_sq_err` giảm từ 11.34 xuống 9.27 m² (−18%). Trong 195 frame có cặp ghép, fused có tổng sai số nhỏ hơn LiDAR ở 137 frame. Ví dụ frame 50 trong `grade_run.log`: cả hai mode `confirmed = 3`, `matches = 3`, `sum_sq_err` 0.1230 (lidar) so với 0.1143 (fused).
 - **Không có ghost:** `precision_track = 1.0`, mọi confirmed track đều ghép được một xe thật trong cổng 2 m.
 - **239 misses chủ yếu do detector, không phải do tracker:** tổng `det_fn` trên log là 222, tức detector đã bỏ sót 222 xe-frame. Ngoài ra có 8 miss ở frame 0–3 (`confirmed = 0` cho tới frame 4) vì track cần 4 hit LiDAR mới vượt `confirmed_threshold` (1/6 → 5/6 > 0.8). Phần còn lại là các track mới hoặc đang thiếu detection. Vì `coverage` tính trên `det_tp`, xe detector bỏ sót không làm giảm `coverage` (0.967).
-- **Giới hạn:** đo camera là tâm hộp 2D ground-truth của camera FRONT cộng nhiễu theo seed, không phải output của một camera detector. Mức cải thiện RMSE của fused vì vậy chỉ cho thấy việc kết hợp đo 2D vào EKF là đúng; nó không chứng minh một hệ thống camera perception thật cũng cải thiện như vậy. Ngoài ra kết quả chỉ trên một segment và một seed.
+- **Giới hạn:** đo camera là tâm hộp 2D ground-truth của camera FRONT cộng nhiễu theo seed, không phải output của một camera detector. Mức cải thiện RMSE của fused vì vậy chỉ cho thấy việc kết hợp đo 2D vào EKF là đúng; nó không chứng minh một hệ thống camera perception thật cũng cải thiện như vậy. Lần chạy chấm điểm chỉ dùng một segment và một seed; kết quả trên 3 segment còn lại ở mục ngay dưới.
 
 Chạy từ root repo:
 
@@ -48,6 +48,24 @@ detector. Kết quả này không đo hiệu quả một perception system độ
 `matches+misses==valid_gt`; tổng/trung bình record phải khớp `metrics.json`.
 File per-mode `metrics_lidar.json`, `metrics_fused.json`, `grade_run_lidar.log`,
 `grade_run_fused.log` được giữ để đối chiếu.
+
+### Kiểm tra thêm trên 4 segment của khóa học
+
+Ngoài lần chạy chấm điểm, mình chạy cùng lệnh (`--fusion compare --seed 0`, frame 0–198) trên 3 segment còn lại để xem kết quả có giữ được không. Vì `fusion-run-lab` luôn ghi đè `student/artifacts/`, sau các lần chạy phụ mình khôi phục artifacts về bản đã commit của segment mặc định (chạy lại segment mặc định cho ra artifacts giống hệt từng byte). `metrics*.json` của 3 segment phụ lưu trong [`bonus/segments/`](bonus/segments/).
+
+| Segment | Det. P / R | LiDAR RMSE (m) | Fused RMSE (m) | Fused − LiDAR (m) | matches | ghosts | misses | mean confirmed |
+|---|---|---|---|---|---|---|---|---|
+| **1005081002024129653** (chấm điểm) | 0.970 / 0.700 | 0.1503 | 0.1359 | −0.0145 | 502 | 0 | 239 | 2.52 |
+| 10072231702153043603 | 0.645 / 0.740 | 0.2193 | 0.2105 | −0.0088 | 55 | 14 | 41 | 0.35 |
+| 10094743350625019937 | 0.959 / 0.402 | 0.3462 | 0.3712 | +0.0250 | 1000 | 0 | 1534 | 5.03 |
+| 10963653239323173269 | 0.995 / 0.576 | 0.2153 | 0.2207 | +0.0054 | 746 | 3 | 680 | 3.76 |
+
+Segment 10072231702153043603 chỉ có 198 frame (`frames = [0, 197]`).
+
+- **Ngưỡng:** cả 4 segment có LiDAR RMSE ≤ 0.45 m, và fused không kém LiDAR quá 0.05 m (lệch lớn nhất +0.025 m).
+- **Fused không phải lúc nào cũng tốt hơn:** fused tốt hơn ở 2 segment, kém hơn chút ở 2 segment. Ở cả 4 segment, `matches`, `ghosts`, `misses` và `mean confirmed` của hai mode giống hệt nhau, đúng với thiết kế track-then-fuse: camera chỉ update EKF, không đổi vòng đời track. Khác biệt chỉ nằm ở `sum_sq_err`.
+- **10094743350625019937:** cảnh đông xe (trung bình 5 track confirmed), detector bỏ sót nhiều (recall 0.40, 1534 misses), RMSE cao nhất. Fused kém hơn 2.5 cm (`sum_sq_err` 119.85 → 137.75 m²). Một khả năng là khi nhiều xe gần nhau trong ảnh FRONT, đo camera 2D bị gán nhầm sang track bên cạnh và kéo track lệch theo hướng ngang.
+- **10072231702153043603:** cảnh rất ít xe (0.35 track confirmed mỗi frame, chỉ 55 cặp ghép). Precision detector thấp (0.645) và có 14 frame ghost, nên RMSE ở segment này dựa trên ít mẫu và kém tin cậy hơn.
 
 ## Giải thích ngắn (Parts E–H — tự viết)
 
@@ -96,7 +114,7 @@ Liệt kê phần bonus đã làm, file bằng chứng trong `student/bonus/` v�
 Ghi rõ, kể cả khi không dùng ("Không dùng AI"). Xem [RULES.md](../RULES.md) mục 2.
 
 - Công cụ đã dùng (ChatGPT, Copilot, Claude, …): Claude (Claude Code trong VS Code)
-- Dùng cho phần nào (hàm, câu hỏi, debug): viết code Part E–H (`kalman.py`, `camera_fusion.py`, `association.py`, `track_management.py`) theo các dòng `# vi: TODO`; debug lỗi `float()` trên ma trận 1×1 với numpy mới trong `mahalanobis_distance`; cài môi trường; tải dữ liệu; chạy `fusion-run-lab`; phân tích log (đếm misses theo `det_fn`, so `sum_sq_err` từng frame); soạn bản nháp tóm tắt kết quả và 6 câu giải thích.
+- Dùng cho phần nào (hàm, câu hỏi, debug): viết code Part E–H (`kalman.py`, `camera_fusion.py`, `association.py`, `track_management.py`) theo các dòng `# vi: TODO`; debug lỗi `float()` trên ma trận 1×1 với numpy mới trong `mahalanobis_distance`; cài môi trường; tải dữ liệu; chạy `fusion-run-lab`; phân tích log (đếm misses theo `det_fn`, so `sum_sq_err` từng frame); soạn bản nháp tóm tắt kết quả và 6 câu giải thích; chạy `compare` trên 3 segment còn lại và soạn bảng so sánh 4 segment.
 - Cách bạn đã kiểm tra lại (pytest, chạy Waymo, đối chiếu công thức): `pytest student/tests -q` được 128 passed, không failed/xfailed. Chạy `fusion-run-lab --fusion compare --seed 0` trên frame 0–198. Đối chiếu số trong báo cáo với `metrics.json` và `grade_run.log` (đủ 398 record, các invariant đúng). Đối chiếu công thức EKF và Mahalanobis với tài liệu `docs/HUONG_DAN_KY_THUAT.md`. Đọc lại từng hàm E–H để tự giải thích được khi vấn đáp.
 
 ## Checklist nộp
